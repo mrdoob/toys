@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Toys</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧸</text></svg>">
+		<style>
+
+			* { box-sizing: border-box; }
+
+			body {
+				margin: 0;
+				overflow: hidden;
+				font-family: ui-sans-serif, system-ui, sans-serif;
+				background: #f4eee3;
+				user-select: none;
+				-webkit-user-select: none;
+			}
+
+			canvas { display: block; touch-action: none; }
+
+			button { font: inherit; cursor: pointer; border: none; }
+
+			#modebar {
+				position: fixed;
+				top: 16px;
+				left: 50%;
+				transform: translateX(-50%);
+				display: flex;
+				background: #fffdf8;
+				border-radius: 999px;
+				padding: 4px;
+				box-shadow: 0 2px 12px rgba(90, 60, 20, 0.15);
+			}
+
+			#modebar button {
+				padding: 8px 22px;
+				border-radius: 999px;
+				background: transparent;
+				color: #7a6248;
+				font-weight: 600;
+			}
+
+			#modebar button.active { background: #8a5a33; color: #fff8ee; }
+
+			#palette {
+				position: fixed;
+				left: 16px;
+				top: 50%;
+				transform: translateY(-50%);
+				display: flex;
+				flex-direction: column;
+				gap: 10px;
+				transition: opacity 0.25s, transform 0.25s;
+			}
+
+			body.play #palette {
+				opacity: 0;
+				pointer-events: none;
+				transform: translate(-16px, -50%);
+			}
+
+			.piece-btn {
+				width: 76px;
+				padding: 8px 4px 6px;
+				background: #fffdf8;
+				border-radius: 14px;
+				box-shadow: 0 2px 10px rgba(90, 60, 20, 0.12);
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 2px;
+				cursor: grab;
+				touch-action: none;
+				transition: transform 0.12s;
+				color: #7a6248;
+				font-size: 11px;
+				font-weight: 600;
+			}
+
+			.piece-btn:hover { transform: scale(1.06); }
+
+			.piece-btn svg {
+				width: 40px;
+				height: 40px;
+				fill: #dcb185;
+				stroke: #77502b;
+				stroke-width: 2.5;
+				pointer-events: none;
+			}
+
+			#toys {
+				position: fixed;
+				right: 16px;
+				top: 50%;
+				transform: translateY(-50%);
+				display: flex;
+				flex-direction: column;
+				gap: 8px;
+				width: 120px;
+				transition: opacity 0.25s, transform 0.25s;
+			}
+
+			.toy-btn {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				gap: 8px;
+				padding: 9px 14px;
+				border-radius: 12px;
+				background: #fffdf8;
+				color: #7a6248;
+				font-weight: 600;
+				font-size: 12px;
+				text-align: left;
+				box-shadow: 0 2px 10px rgba(90, 60, 20, 0.12);
+			}
+
+			.toy-del { opacity: 0.4; }
+			.toy-del:hover { opacity: 1; color: #a04d33; }
+
+			.toy-label { flex: 1; }
+
+			.toy-eye { opacity: 0.55; }
+			.toy-eye:hover { opacity: 1; }
+
+			.toy-btn.active .toy-del:hover { color: #ffd9c4; }
+
+			.toy-btn.active { background: #8a5a33; color: #fff8ee; }
+
+			.toy-btn.new {
+				background: transparent;
+				border: 2px dashed #d8c9ab;
+				color: #f2e7d3;
+				box-shadow: none;
+			}
+
+			#toolbar {
+				position: fixed;
+				bottom: 52px;
+				left: 50%;
+				transform: translateX(-50%);
+				display: flex;
+				gap: 8px;
+				background: #fffdf8;
+				padding: 6px;
+				border-radius: 999px;
+				box-shadow: 0 2px 12px rgba(90, 60, 20, 0.15);
+			}
+
+			#toolbar[hidden] { display: none; }
+
+			#toolbar button {
+				padding: 7px 16px;
+				border-radius: 999px;
+				background: #f4e9da;
+				color: #6d4a26;
+				font-weight: 600;
+			}
+
+			#toolbar button:hover { background: #ecdcc4; }
+
+			#toolbar #deleteBtn { background: #f6e0d8; color: #a04d33; }
+
+			#actions {
+				position: fixed;
+				top: 20px;
+				right: 16px;
+				display: flex;
+				gap: 8px;
+			}
+
+			#actions button {
+				padding: 8px 16px;
+				border-radius: 999px;
+				background: #fffdf8;
+				color: #7a6248;
+				font-weight: 600;
+				box-shadow: 0 2px 10px rgba(90, 60, 20, 0.12);
+			}
+
+			#resetBtn {
+				display: none;
+				position: fixed;
+				bottom: 52px;
+				left: 50%;
+				transform: translateX(-50%);
+				padding: 8px 20px;
+				border-radius: 999px;
+				background: #fffdf8;
+				color: #7a6248;
+				font-weight: 600;
+				box-shadow: 0 2px 12px rgba(90, 60, 20, 0.15);
+			}
+
+			body.play #resetBtn { display: block; }
+
+			#hint {
+				position: fixed;
+				bottom: 18px;
+				left: 50%;
+				transform: translateX(-50%);
+				color: #99876d;
+				font-size: 12px;
+				pointer-events: none;
+				text-align: center;
+				white-space: nowrap;
+			}
+
+			#github {
+				position: fixed;
+				bottom: 18px;
+				right: 16px;
+				color: #99876d;
+				font-size: 12px;
+				font-weight: 600;
+				text-decoration: none;
+			}
+
+			#github:hover { color: #7a6248; }
+
+			#recBadge {
+				position: fixed;
+				top: 72px;
+				left: 50%;
+				transform: translateX(-50%);
+				background: #fffdf8;
+				color: #a04d33;
+				font-weight: 600;
+				font-size: 12px;
+				padding: 7px 14px;
+				border-radius: 999px;
+				box-shadow: 0 2px 12px rgba(90, 60, 20, 0.15);
+			}
+
+			#shareModal {
+				position: fixed;
+				inset: 0;
+				background: rgba(60, 42, 20, 0.45);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				z-index: 20;
+			}
+
+			#shareModal[hidden] { display: none; }
+
+			#shareCard {
+				background: #fffdf8;
+				border-radius: 18px;
+				padding: 16px;
+				width: min(520px, calc(100vw - 40px));
+				display: flex;
+				flex-direction: column;
+				gap: 12px;
+				box-shadow: 0 12px 40px rgba(60, 40, 15, 0.35);
+			}
+
+			#shareStage { position: relative; }
+			#shareStage[hidden] { display: none; }
+
+			#shareVideo {
+				width: 100%;
+				border-radius: 12px;
+				display: block;
+				background: #000;
+			}
+
+			#downloadBtn {
+				position: absolute;
+				top: 10px;
+				right: 10px;
+			}
+
+			#shareLinkLabel {
+				font-size: 12px;
+				font-weight: 600;
+				color: #a3906f;
+				margin: 0 0 -6px 6px;
+			}
+
+			#shareLinkRow { display: flex; gap: 8px; }
+
+			#shareLink {
+				flex: 1;
+				min-width: 0;
+				font: inherit;
+				font-size: 12px;
+				color: #7a6248;
+				background: #f4e9da;
+				border: none;
+				border-radius: 999px;
+				padding: 8px 14px;
+			}
+
+			#shareActions { display: flex; gap: 8px; justify-content: flex-end; }
+
+			#copyLinkBtn, #downloadBtn, #closeShareBtn {
+				padding: 8px 16px;
+				border-radius: 999px;
+				background: #8a5a33;
+				color: #fff8ee;
+				font-weight: 600;
+				font-size: 13px;
+				font-family: inherit;
+				text-decoration: none;
+				text-align: center;
+				border: none;
+				cursor: pointer;
+			}
+
+			#closeShareBtn { background: #f4e9da; color: #6d4a26; }
+
+			#loading {
+				position: fixed;
+				inset: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				background: #f4eee3;
+				color: #8a5a33;
+				font-size: 15px;
+				font-weight: 600;
+				z-index: 10;
+			}
+
+		</style>
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/build/three.webgpu.js",
+					"three/webgpu": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/build/three.webgpu.js",
+					"three/tsl": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/build/three.tsl.js",
+					"three/addons/": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/jsm/",
+					"box3d.js/inline": "https://cdn.jsdelivr.net/npm/box3d.js@0.0.2/dist/box3d.inline.mjs"
+				}
+			}
+		</script>
+	</head>
+	<body>
+		<div id="modebar">
+			<button id="buildBtn" class="active">Build</button>
+			<button id="playBtn">Play</button>
+		</div>
+		<div id="palette"></div>
+		<div id="toys"></div>
+		<div id="toolbar" hidden>
+			<button id="spinBtn"></button>
+			<button id="duplicateBtn">Duplicate</button>
+			<button id="deleteBtn">Delete</button>
+		</div>
+		<div id="actions">
+			<button id="shareBtn">Share</button>
+		</div>
+		<button id="resetBtn">Reset</button>
+		<div id="hint"></div>
+		<a id="github" href="https://github.com/mrdoob/toys" target="_blank" rel="noopener">GitHub</a>
+		<div id="recBadge" hidden>● recording…</div>
+		<div id="shareModal" hidden>
+			<div id="shareCard">
+				<div id="shareStage" hidden>
+					<video id="shareVideo" controls autoplay muted loop playsinline></video>
+					<a id="downloadBtn" download="toy.mp4">Download video</a>
+				</div>
+				<label id="shareLinkLabel" for="shareLink">Share link</label>
+				<div id="shareLinkRow">
+					<input id="shareLink" readonly>
+					<button id="copyLinkBtn">Copy</button>
+				</div>
+				<div id="shareActions">
+					<button id="closeShareBtn">Close</button>
+				</div>
+			</div>
+		</div>
+		<div id="loading">building the workshop…</div>
+		<script type="module" src="main.js"></script>
+	</body>
+</html>
