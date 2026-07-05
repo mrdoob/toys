@@ -16,6 +16,8 @@
 				background: #f4eee3;
 				user-select: none;
 				-webkit-user-select: none;
+				-webkit-touch-callout: none;
+				overscroll-behavior: none;
 			}
 
 			canvas { display: block; touch-action: none; }
@@ -323,6 +325,15 @@
 				font-size: 15px;
 				font-weight: 600;
 				z-index: 10;
+			}
+
+			@media (max-width: 700px) {
+
+				.piece-btn { width: 60px; padding: 6px 4px 5px; font-size: 10px; }
+				.piece-btn svg { width: 30px; height: 30px; }
+				#toys { width: 100px; }
+				#hint { white-space: normal; max-width: 55vw; }
+
 			}
 
 		</style>

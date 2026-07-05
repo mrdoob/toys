@@ -70,6 +70,10 @@ const HANDLE_DIRS = [
 	new THREE.Vector3( 0, 0, 1 ), new THREE.Vector3( 0, 0, - 1 )
 ];
 
+// fingers need bigger targets than cursors
+
+const GIZMO_SCALE = window.matchMedia( '(pointer: coarse)' ).matches ? 1.8 : 1;
+
 let b3 = null;
 let groundMesh = null; // box3d mesh data for the cup, shared by every world
 let eventsBuffer = null;
@@ -1080,8 +1084,21 @@ function startDrag( event, type ) {
 
 	window.addEventListener( 'pointermove', onDragMove );
 	window.addEventListener( 'pointerup', onDragEnd );
+	window.addEventListener( 'pointercancel', onDragCancel );
 
 	onDragMove( event );
+
+}
+
+function onDragCancel() {
+
+	window.removeEventListener( 'pointermove', onDragMove );
+	window.removeEventListener( 'pointerup', onDragEnd );
+	window.removeEventListener( 'pointercancel', onDragCancel );
+
+	scene.remove( drag.ghost );
+	drag = null;
+	updateHint();
 
 }
 
@@ -1138,6 +1155,7 @@ function onDragEnd( event ) {
 
 	window.removeEventListener( 'pointermove', onDragMove );
 	window.removeEventListener( 'pointerup', onDragEnd );
+	window.removeEventListener( 'pointercancel', onDragCancel );
 
 	scene.remove( drag.ghost );
 
@@ -1272,6 +1290,7 @@ function setSpin( piece, spin ) {
 		// the pin marking the spin axis — drag it to move the axis
 
 		const marker = new THREE.Mesh( markerGeometry, markerMaterial );
+		marker.scale.setScalar( GIZMO_SCALE );
 		marker.renderOrder = 10;
 		root.add( marker );
 
@@ -1421,6 +1440,7 @@ function createHandles( piece ) {
 		const handle = new THREE.Mesh( handleGeometry, handleMaterial );
 		handle.quaternion.setFromUnitVectors( Y_AXIS, dir );
 		handle.position.copy( dir ).multiplyScalar( handleOffsetFor( piece, dir ) );
+		handle.scale.setScalar( GIZMO_SCALE );
 		handle.renderOrder = 10;
 		handle.userData.dir = dir;
 		piece.mesh.add( handle );
@@ -1552,6 +1572,7 @@ function onResizeStart( event ) {
 
 	window.addEventListener( 'pointermove', onResizeMove, true );
 	window.addEventListener( 'pointerup', onResizeEnd, true );
+	window.addEventListener( 'pointercancel', onResizeEnd, true );
 
 }
 
@@ -1639,6 +1660,7 @@ function onPivotStart( event ) {
 
 	window.addEventListener( 'pointermove', onPivotMove, true );
 	window.addEventListener( 'pointerup', onPivotEnd, true );
+	window.addEventListener( 'pointercancel', onPivotEnd, true );
 
 }
 
@@ -1684,6 +1706,7 @@ function cancelPivotDrag() {
 
 	window.removeEventListener( 'pointermove', onPivotMove, true );
 	window.removeEventListener( 'pointerup', onPivotEnd, true );
+	window.removeEventListener( 'pointercancel', onPivotEnd, true );
 
 	pivotDrag = null;
 	document.body.style.cursor = '';
@@ -1718,6 +1741,13 @@ function onMoveStart( event ) {
 
 	window.addEventListener( 'pointermove', onMoveMove, true );
 	window.addEventListener( 'pointerup', onMoveEnd, true );
+	window.addEventListener( 'pointercancel', onMoveCancel, true );
+
+}
+
+function onMoveCancel() {
+
+	cancelMoveDrag();
 
 }
 
@@ -1807,6 +1837,7 @@ function onMoveEnd( event ) {
 
 	window.removeEventListener( 'pointermove', onMoveMove, true );
 	window.removeEventListener( 'pointerup', onMoveEnd, true );
+	window.removeEventListener( 'pointercancel', onMoveCancel, true );
 
 	const { piece, subtree, placement, parent, active } = moveDrag;
 	moveDrag = null;
@@ -1864,6 +1895,7 @@ function cancelMoveDrag() {
 
 	window.removeEventListener( 'pointermove', onMoveMove, true );
 	window.removeEventListener( 'pointerup', onMoveEnd, true );
+	window.removeEventListener( 'pointercancel', onMoveCancel, true );
 
 	if ( moveDrag.active ) {
 
@@ -1887,6 +1919,7 @@ function cancelResize() {
 
 	window.removeEventListener( 'pointermove', onResizeMove, true );
 	window.removeEventListener( 'pointerup', onResizeEnd, true );
+	window.removeEventListener( 'pointercancel', onResizeEnd, true );
 
 	resize = null;
 	document.body.style.cursor = '';
