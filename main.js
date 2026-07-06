@@ -28,7 +28,8 @@ const TYPES = {
 		name: 'Block',
 		kind: 'box',
 		defaultSize: { x: 0.5, y: 0.5, z: 0.5 },
-		wood: [ 'maple', 'semigloss' ],
+		wood: [ 'white_oak', 'semigloss' ],
+		grain: { axis: 'y', scale: 1.6, radius: 1.2, lighten: 0.14 },
 		mountAxis: Y_AXIS, mountDepth: 0.25,
 		friction: 0.6, restitution: 0.05,
 		icon: '<rect x="10" y="10" width="28" height="28" rx="7"/>'
@@ -38,6 +39,7 @@ const TYPES = {
 		kind: 'box',
 		defaultSize: { x: 1.2, y: 0.15, z: 0.45 },
 		wood: [ 'teak', 'semigloss' ],
+		grain: { axis: 'x', scale: 1.6, radius: 1.4 },
 		mountAxis: Y_AXIS, mountDepth: 0.075,
 		friction: 0.6, restitution: 0.05,
 		icon: '<rect x="4" y="18" width="40" height="12" rx="5"/>'
@@ -47,6 +49,7 @@ const TYPES = {
 		kind: 'cylinder',
 		defaultSize: { radius: 0.24, width: 0.16 },
 		wood: [ 'walnut', 'gloss' ],
+		grain: { axis: 'z', scale: 2.2, radius: 0.05 },
 		mountAxis: Z_AXIS, mountDepth: 0.08,
 		friction: 1.0, restitution: 0.05,
 		icon: '<circle cx="24" cy="24" r="16"/><circle cx="24" cy="24" r="4" fill="#77502b"/>'
@@ -55,7 +58,8 @@ const TYPES = {
 		name: 'Ball',
 		kind: 'sphere',
 		defaultSize: { radius: 0.24 },
-		wood: [ 'cherry', 'gloss' ],
+		wood: [ 'cherry', 'semigloss' ],
+		grain: { axis: 'y', scale: 1.6, radius: 1.0 },
 		mountAxis: Y_AXIS, mountDepth: 0.24,
 		friction: 0.7, restitution: 0.55,
 		icon: '<circle cx="24" cy="24" r="15"/>'
@@ -161,7 +165,42 @@ async function init() {
 
 	for ( const def of Object.values( TYPES ) ) {
 
-		def.material = WoodNodeMaterial.fromPreset( def.wood[ 0 ], def.wood[ 1 ] );
+		// the wood pattern grows around local z, and our geometry sits at the
+		// pith of the log — reorient the grain along each piece's natural axis
+		// and cut from further out in the trunk, where the rings run long and
+		// nearly parallel. wheels stay on the axis for a turned end-grain face.
+		// a few offset variants keep neighbouring pieces from matching, and all
+		// wood materials share a single shader program, so variants are free
+
+		const rotation = new THREE.Matrix4();
+		if ( def.grain.axis === 'x' ) rotation.makeRotationY( - Math.PI / 2 );
+		if ( def.grain.axis === 'y' ) rotation.makeRotationX( Math.PI / 2 );
+
+		def.materials = [ 0, 1, 2 ].map( ( i ) => {
+
+			const material = WoodNodeMaterial.fromPreset( def.wood[ 0 ], def.wood[ 1 ] );
+
+			const angle = i * 2.1 + def.grain.radius; // any spread will do
+			const radius = def.grain.radius * ( 1 + i * 0.2 );
+			const scale = def.grain.scale;
+
+			material.transformationMatrix = new THREE.Matrix4()
+				.makeTranslation( Math.cos( angle ) * radius, Math.sin( angle ) * radius, i * 0.7 )
+				.multiply( new THREE.Matrix4().makeScale( scale, scale, scale ) )
+				.multiply( rotation );
+
+			// the presets are calibrated for close-ups — from toy distance the
+			// grain washes out, so pull the two tones apart, and let a type
+			// lift the whole palette towards paler, rawer wood
+
+			const lighten = def.grain.lighten ?? 0;
+			material.darkGrainColor.offsetHSL( 0, 0.02 - lighten * 0.5, - 0.08 + lighten );
+			material.lightGrainColor.offsetHSL( 0, - lighten * 0.5, 0.02 + lighten );
+
+			return material;
+
+		} );
+
 		def.geometry = buildGeometry( def, def.defaultSize ); // ghost preview
 
 	}
@@ -1197,7 +1236,7 @@ function addPiece( type, placement, parent ) {
 	const def = TYPES[ type ];
 	const size = { ...def.defaultSize };
 
-	const mesh = new THREE.Mesh( buildGeometry( def, size ), def.material );
+	const mesh = new THREE.Mesh( buildGeometry( def, size ), def.materials[ activeToy.pieces.length % def.materials.length ] );
 	mesh.castShadow = true;
 	mesh.receiveShadow = true;
 	mesh.position.copy( placement.position );
