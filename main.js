@@ -113,7 +113,7 @@ const _v2 = new THREE.Vector3();
 const _q1 = new THREE.Quaternion();
 const _q2 = new THREE.Quaternion();
 
-const ghostMaterial = new THREE.MeshStandardMaterial( { transparent: true, opacity: 0.5, depthWrite: false, roughness: 0.8 } );
+const ghostMaterial = new THREE.MeshStandardMaterial( { transparent: true, opacity: 0.5, roughness: 0.8 } );
 const ringMaterial = new THREE.MeshBasicMaterial( { color: 0xff9f2e, transparent: true, opacity: 0.6, depthWrite: false } );
 const dotMaterial = new THREE.MeshStandardMaterial( { color: 0xff9f2e, emissive: 0xff9f2e, emissiveIntensity: 0.25, roughness: 0.35 } );
 const dotGeometry = new THREE.SphereGeometry( 0.035, 12, 8 );
@@ -1136,6 +1136,7 @@ function startDrag( event, type ) {
 	event.preventDefault();
 
 	const ghost = new THREE.Mesh( TYPES[ type ].geometry, ghostMaterial );
+	ghost.castShadow = true;
 	ghost.visible = false;
 	scene.add( ghost );
 
