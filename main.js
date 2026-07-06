@@ -123,19 +123,6 @@ const handleGeometry = new THREE.ConeGeometry( 0.05, 0.12, 12 );
 const handleMaterial = new THREE.MeshStandardMaterial( { color: 0xff8a2a, emissive: 0xff8a2a, emissiveIntensity: 0.25, roughness: 0.35, transparent: true, opacity: 0.95, depthTest: false } );
 const handleHoverMaterial = new THREE.MeshStandardMaterial( { color: 0xffc36b, emissive: 0xffc36b, emissiveIntensity: 0.5, roughness: 0.35, depthTest: false } );
 
-function viewSize() {
-
-	// mobile browsers can report a zero-height viewport mid-transition
-	// (url bar, keyboard, overlays) — a zero-sized swapchain texture trips
-	// webgpu validation and poisons every frame until the next resize
-
-	return {
-		width: Math.max( window.innerWidth, 1 ),
-		height: Math.max( window.innerHeight, 1 )
-	};
-
-}
-
 init().catch( ( error ) => {
 
 	console.error( error );
@@ -151,8 +138,7 @@ async function init() {
 
 	renderer = new THREE.WebGPURenderer( { antialias: false } );
 	renderer.setPixelRatio( Math.min( window.devicePixelRatio, 2 ) );
-	const size = viewSize();
-	renderer.setSize( size.width, size.height );
+	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.shadowMap.enabled = true;
 	renderer.shadowMap.type = THREE.PCFShadowMap;
 	renderer.toneMapping = THREE.NeutralToneMapping;
@@ -209,7 +195,7 @@ async function init() {
 	scene.background = new THREE.Color( 0x9a8b70 );
 	scene.fog = new THREE.Fog( 0x9a8b70, 20, 45 );
 
-	camera = new THREE.PerspectiveCamera( 45, size.width / size.height, 0.1, 100 );
+	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 100 );
 	camera.position.set( 3.6, 2.6, 4.6 );
 
 	controls = new OrbitControls( camera, renderer.domElement );
@@ -1032,11 +1018,9 @@ function bindEvents() {
 
 	window.addEventListener( 'resize', () => {
 
-		const size = viewSize();
-
-		camera.aspect = size.width / size.height;
+		camera.aspect = window.innerWidth / window.innerHeight;
 		camera.updateProjectionMatrix();
-		renderer.setSize( size.width, size.height );
+		renderer.setSize( window.innerWidth, window.innerHeight );
 
 	} );
 
