@@ -298,6 +298,10 @@ async function init() {
 	else if ( viewingShared ) loadLocal( true ); // your toys tag along, benched
 	updateHint();
 
+	// compile the pipelines behind the loading screen, not a blank page
+
+	await postProcessing.renderAsync();
+
 	document.getElementById( 'loading' ).remove();
 	renderer.setAnimationLoop( animate );
 
