@@ -325,7 +325,7 @@ async function init() {
 
 	// compile the pipelines behind the loading screen, not a blank page
 
-	await postProcessing.renderAsync();
+	postProcessing.render();
 
 	document.getElementById( 'loading' ).remove();
 	renderer.setAnimationLoop( animate );
